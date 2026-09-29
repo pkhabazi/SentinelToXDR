@@ -1,0 +1,11 @@
+# USE CASE: a redirect stub, not a detection. Content repositories leave these
+# behind when a rule moves - an id, a name, a kind, no query. Azure-Sentinel
+# has 312 of them. Counting them as Blocked would claim 312 detections cannot
+# migrate when there was never a detection in the file.
+# EXPECT: skipped entirely - not an analytics rule
+id: 5a1e0024-0000-4000-8000-000000000024
+name: Sample - Rule that moved somewhere else
+description: |
+  'As part of content migration, this file is moved to a new location. You can find it here https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Sample/Analytic%20Rules/Moved.yaml'
+version: 1.0.2
+kind: Scheduled

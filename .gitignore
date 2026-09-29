@@ -1,0 +1,20 @@
+# Generated assessment output. These are produced by running the module against a
+# content repository and can be several megabytes; regenerate them, do not commit them.
+validation/
+*.report.json
+*.report.md
+
+# Build output from ./build.ps1 -Task Package. Regenerate it; do not commit it.
+artifacts/
+
+# Output of the assess-migration skill. Regenerate it; do not commit it.
+out/
+
+# Scratch output of docs/Demo-Walkthrough.md.
+demo/
+
+# Local-only: agent memory, personal run scripts, and the working-agreement file for the
+# coding assistant. None of it is part of the module.
+memory/
+.local/
+CLAUDE.md

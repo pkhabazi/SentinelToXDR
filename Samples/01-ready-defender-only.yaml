@@ -1,0 +1,35 @@
+# USE CASE: the clean migration. Everything a custom detection wants.
+# Native Defender tables, a single tactic, entity identifiers that all have a
+# target column, and a lookback that already matches the fixed window.
+# EXPECT: Ready
+id: 5a1e0001-0000-4000-8000-000000000001
+name: Sample - PowerShell spawned by Office
+description: Detects Office applications spawning PowerShell.
+severity: High
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+  - T1059.001
+query: |
+  DeviceProcessEvents
+  | where InitiatingProcessFileName in~ ('winword.exe','excel.exe','outlook.exe')
+  | where FileName =~ 'powershell.exe'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName
+      - identifier: AzureID
+        columnName: DeviceId
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: AccountName
+      - identifier: Sid
+        columnName: AccountSid

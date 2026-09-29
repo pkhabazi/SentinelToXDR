@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: PSScriptAnalyzer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path ./src -Recurse -Severity @('Error','Warning')
+          if ($results) {
+            $results | Format-Table -AutoSize | Out-String | Write-Host
+            $errors = @($results | Where-Object Severity -eq 'Error')
+            if ($errors.Count -gt 0) {
+              Write-Host "::error::PSScriptAnalyzer reported $($errors.Count) error(s)."
+              exit 1
+            }
+            Write-Host "::warning::PSScriptAnalyzer reported $($results.Count) warning(s)."
+          } else {
+            Write-Host 'PSScriptAnalyzer: clean.'
+          }
+
+  test:
+    name: Pester (PowerShell ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -Scope CurrentUser -Force -SkipPublisherCheck
+          Install-Module -Name powershell-yaml -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: Run Pester suite
+        shell: pwsh
+        run: ./tests/Invoke-Tests.ps1 -OutputFormat NUnitXml -OutputPath ./testresults.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pester-results-${{ matrix.os }}
+          path: ./testresults.xml
+          if-no-files-found: ignore

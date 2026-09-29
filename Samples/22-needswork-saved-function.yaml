@@ -1,0 +1,24 @@
+# USE CASE: a workspace-saved function. Saved functions live in the Log Analytics
+# workspace and advanced hunting has no equivalent: on 2026-09-16 the custom
+# detection API refused this exact query at POST with 'Unknown function'. Graded
+# NeedsWork with the other workspace-only dependencies; inline the function body.
+# EXPECT: NeedsWork - calls a workspace-saved function
+id: 5a1e0022-0000-4000-8000-000000000022
+name: Sample - Saved function call
+description: Calls a helper function that may only exist in the workspace.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Discovery
+relevantTechniques:
+  - T1087
+query: |
+  _MyOrgDeviceBaseline()
+  | where IsManaged == false
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

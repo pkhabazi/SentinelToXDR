@@ -1,0 +1,28 @@
+# USE CASE: a tactic with no technique, which is fine and must stay fine.
+# On 2026-08-19 the service refused this ("Tactic 'Execution' must specify at
+# least one technique."), so the module dropped the tactic and graded the rule
+# NeedsWork. On 2026-09-15 a fresh-id probe was ACCEPTED and stored it as
+# {"tactic":"Execution","techniques":[]}. The requirement had gone - most likely
+# ahead of 2026-10-01, when 'category' is removed and a tactics-or-category rule
+# would have become tactics-mandatory.
+# This sample now guards the correction: the tactic is CARRIED, not discarded,
+# and no finding claims a refusal that will not happen. Renamed from
+# 28-needswork-no-techniques.
+# EXPECT: Ready - the tactic is emitted with an empty techniques collection
+id: 5a1e0028-0000-4000-8000-000000000028
+name: Sample - Tactic with no technique
+description: Names a tactic but no technique, which the API refuses.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+query: |
+  DeviceProcessEvents
+  | where FileName == 'rundll32.exe'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

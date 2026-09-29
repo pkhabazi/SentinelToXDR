@@ -1,0 +1,25 @@
+# USE CASE: the mixed-tier trap, and the reason this module exists.
+# A five-minute schedule over Sentinel data is legal. Add ONE Defender table for
+# device context and the whole rule forfeits custom frequency: it is capped at
+# hourly, and nothing in the portal explains why.
+# EXPECT: NeedsWork - frequency PT5M becomes PT1H, naming DeviceInfo
+id: 5a1e0004-0000-4000-8000-000000000004
+name: Sample - Mixed tier, high frequency
+description: Reads Sentinel and Defender tables in one query.
+severity: High
+kind: Scheduled
+queryFrequency: PT5M
+queryPeriod: PT30M
+tactics:
+  - LateralMovement
+relevantTechniques:
+  - T1021
+query: |
+  SecurityEvent
+  | where EventID == 4624
+  | join kind=inner DeviceInfo on $left.Computer == $right.DeviceName
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: Computer

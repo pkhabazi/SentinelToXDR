@@ -1,0 +1,24 @@
+# USE CASE: names that look like something else. A '/' makes a name look like
+# an ARM resource path and a leading '[' makes it look like a template
+# expression - both used to be discarded, leaving 94 unnamed rows in a report
+# of the Azure-Sentinel corpus. The display name must survive intact.
+# EXPECT: Ready - and the name is kept exactly as written
+id: 5a1e0026-0000-4000-8000-000000000026
+name: "[Entra ID] Devices flapping online/offline"
+description: A display name containing a slash and a bracketed prefix.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Impact
+relevantTechniques:
+  - T1486
+query: |
+  DeviceInfo
+  | where OnboardingStatus == 'Onboarded'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

@@ -1,0 +1,26 @@
+# USE CASE: no MITRE data at all, which is also fine now.
+# On 2026-08-19 this was refused with "Either tactics or category must be
+# provided." - and since this module never emits the deprecated category, that
+# made tactics mandatory for its output. On 2026-09-15 a fresh-id probe was
+# ACCEPTED with no tactics and no category.
+# Together with sample 28 this covers the 1,216 corpus rules that had been
+# graded as certain rejections by a requirement that no longer exists. Nothing
+# is invented to fill the gap: the rule simply carries no ATT&CK context, which
+# is a property of the source rule and not a conversion gap. Renamed from
+# 29-needswork-no-tactics.
+# EXPECT: Ready - converts and deploys with no tactics at all
+id: 5a1e0029-0000-4000-8000-000000000029
+name: Sample - No MITRE data
+description: Carries no tactics and no techniques.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+query: |
+  DeviceNetworkEvents
+  | where RemotePort == 4444
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

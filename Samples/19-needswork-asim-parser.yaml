@@ -1,0 +1,23 @@
+# USE CASE: an ASIM parser. _Im_Dns is a function deployed into the Log
+# Analytics workspace, not a table in advanced hunting. The rule converts
+# perfectly and the detection fails on its first run.
+# EXPECT: NeedsWork - the query depends on something Defender XDR does not have
+id: 5a1e0019-0000-4000-8000-000000000019
+name: Sample - ASIM DNS parser
+description: Uses the ASIM DNS parser rather than a Defender table.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - CommandAndControl
+relevantTechniques:
+  - T1071
+query: |
+  _Im_Dns(domain_has_any=dynamic(['evil.example']))
+  | summarize Hits = count() by SrcIpAddr
+entityMappings:
+  - entityType: IP
+    fieldMappings:
+      - identifier: Address
+        columnName: SrcIpAddr

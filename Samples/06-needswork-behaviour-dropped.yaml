@@ -1,0 +1,36 @@
+# USE CASE: everything that has no target at all. A trigger threshold, an alert
+# suppression window, event grouping and alerts-without-incidents all disappear.
+# The detection deploys and behaves differently in four ways at once.
+# EXPECT: NeedsWork - threshold, suppression, grouping and incident settings dropped
+id: 5a1e0006-0000-4000-8000-000000000006
+name: Sample - Behaviour that has no target
+description: Carries four settings a custom detection cannot express.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+triggerOperator: gt
+triggerThreshold: 25
+suppressionEnabled: true
+suppressionDuration: PT5H
+tactics:
+  - Impact
+relevantTechniques:
+  - T1486
+query: |
+  DeviceEvents
+  | where ActionType == 'AntivirusDetection'
+eventGroupingSettings:
+  aggregationKind: AlertPerResult
+incidentConfiguration:
+  createIncident: false
+  groupingConfiguration:
+    enabled: true
+    reopenClosedIncident: false
+    lookbackDuration: PT5H
+    matchingMethod: AllEntities
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

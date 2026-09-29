@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_comment": "USE CASE: the shape Content Hub actually ships. The rule is nested inside a content template, and its GUID is hidden in a [concat()] expression that has to be resolved against the template parameters. Without that resolution the rule gets a fresh id on every conversion and a re-run creates duplicates instead of updating. EXPECT: Review, id recovered as 5a1e0013-0000-4000-8000-000000000013"
+  },
+  "parameters": {
+    "workspace": { "type": "string", "defaultValue": "law-soc" },
+    "analytic1-id": { "type": "string", "defaultValue": "5a1e0013-0000-4000-8000-000000000013" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "wrapper",
+      "resources": [
+        {
+          "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+          "apiVersion": "2023-02-01",
+          "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',parameters('analytic1-id'))]",
+          "kind": "Scheduled",
+          "properties": {
+            "displayName": "Sample - Rule nested in a Content Hub template",
+            "description": "Ships the way Content Hub solutions ship.",
+            "severity": "Medium",
+            "enabled": true,
+            "query": "SigninLogs\n| where ResultType == 50126",
+            "queryFrequency": "PT1H",
+            "queryPeriod": "PT1H",
+            "triggerOperator": "GreaterThan",
+            "triggerThreshold": 0,
+            "tactics": ["CredentialAccess"],
+            "techniques": ["T1110"],
+            "entityMappings": [
+              {
+                "entityType": "Account",
+                "fieldMappings": [
+                  { "identifier": "FullName", "columnName": "UserPrincipalName" },
+                  { "identifier": "AadUserId", "columnName": "UserId" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

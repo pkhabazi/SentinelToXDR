@@ -1,0 +1,305 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/pkhabazi/SentinelToXDR/blob/main/CustomDetection.schema.json",
+  "title": "Microsoft Defender XDR custom detection rule",
+  "description": "The output shape produced by ConvertTo-XDRCustomDetection -Format Graph. Mirrors microsoft.graph.security.detectionRule (Microsoft Graph beta), which is the body POST /security/rules/detectionRules accepts. Properties Microsoft removes on 2026-10-01 (isEnabled, detectorId, lastRunDetails, schedule.period, schedule.nextRunDateTime, alertTemplate.category, alertTemplate.mitreTechniques, alertTemplate.impactedAssets, detectionAction.responseActions) are deliberately absent and are never emitted.",
+  "x-source": {
+    "resource": "microsoft.graph.security.detectionRule",
+    "url": "https://learn.microsoft.com/graph/api/resources/security-detectionrule?view=graph-rest-beta",
+    "apiVersion": "beta",
+    "endpoint": "POST /security/rules/detectionRules",
+    "fetchedDate": "2026-08-11"
+  },
+  "type": "object",
+  "required": ["id", "displayName", "status", "queryCondition", "schedule"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Client-provided unique identifier of the rule. The converter carries the Sentinel rule GUID here so a re-conversion maps to the same detection.",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Display name of the rule. Mapped from the Sentinel rule name / properties.displayName.",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the rule. Mapped from the Sentinel description, or from alertDetailsOverride.alertDescriptionFormat when the rule defines one."
+    },
+    "status": {
+      "type": "string",
+      "description": "Run status. Mapped from the Sentinel enabled flag (or the community 'status' field, where only 'Deprecated' means off). 'autoDisabled' is set by the service and is never emitted by the converter.",
+      "enum": ["enabled", "disabled", "autoDisabled", "unknownFutureValue"]
+    },
+    "queryCondition": {
+      "type": "object",
+      "description": "The advanced hunting query that defines the detection logic.",
+      "required": ["queryText"],
+      "additionalProperties": false,
+      "properties": {
+        "queryText": {
+          "type": "string",
+          "description": "KQL query, carried over from the Sentinel rule. Sentinel-tier tables require Microsoft Sentinel data in the Defender portal; the converter classifies the query and diagnoses the data tier."
+        }
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "description": "How often the rule runs.",
+      "required": ["frequency"],
+      "additionalProperties": false,
+      "properties": {
+        "frequency": {
+          "type": "string",
+          "description": "ISO 8601 duration, for example PT1H or P1D. '0' means the rule runs continuously (NRT). The converter carries the source queryFrequency, rounded to a supported bucket only when the rule targets Defender-tier data.",
+          "pattern": "^(0|P(?:\\d+W)?(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+S)?)?)$"
+        }
+      }
+    },
+    "detectionAction": {
+      "type": "object",
+      "description": "What happens when the rule matches: the alert that is created, and any automated response actions.",
+      "additionalProperties": false,
+      "properties": {
+        "alertTemplate": { "$ref": "#/definitions/alertTemplate" },
+        "automatedActions": {
+          "type": "object",
+          "description": "Automated response actions grouped by target entity type (isolateDevices, disableUsers, softDeleteEmails, and so on). Sentinel analytics rules have no equivalent to map from, so the converter never fabricates these; configure them after migration.",
+          "additionalProperties": true
+        },
+        "organizationalScope": {
+          "type": "object",
+          "description": "Device groups the rule applies to. Not derivable from a Sentinel rule.",
+          "additionalProperties": true
+        }
+      }
+    }
+  },
+  "definitions": {
+    "alertTemplate": {
+      "type": "object",
+      "description": "The alert generated when the rule matches.",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Alert title. Sentinel rules have no dedicated alert title, so the rule name is used unless -AlertTitle is given or the rule defines alertDetailsOverride.alertDisplayNameFormat."
+        },
+        "description": { "type": "string" },
+        "severity": {
+          "type": "string",
+          "description": "Lower-case in Graph; Sentinel uses Title Case.",
+          "enum": ["informational", "low", "medium", "high"]
+        },
+        "recommendedActions": {
+          "type": "string",
+          "description": "Analyst guidance. Sentinel has no equivalent field, so this is only set when -RecommendedAction is supplied."
+        },
+        "tactics": {
+        "type": "array",
+        "description": "MITRE ATT&CK framing. Modelled as a collection, but the service accepts exactly ONE entry and refuses more (\"Only one tactic is currently supported.\"), and that entry must carry at least one technique. Neither limit is documented; both were found by POSTing to a live tenant. See docs/API-Constraints.md and TacticConstraints in src/Data/GraphDetectionRule.psd1. Sentinel does not record which technique belongs to which tactic, so the converter keeps the first mapped tactic, attaches the full technique list to it, and reports the tactics it dropped.",
+        "maxItems": 1,
+        "items": { "$ref": "#/definitions/mitreTactic" }
+        },
+        "entityMappings": { "$ref": "#/definitions/entityMappingConfiguration" },
+        "customDetails": {
+          "type": "object",
+          "description": "Custom key-value pairs to include in the alert. Each value names the query column supplying the detail. Carried from the Sentinel customDetails map.",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "mitreTactic": {
+      "type": "object",
+      "required": ["tactic",
+        "techniques"],
+      "additionalProperties": false,
+      "properties": {
+        "tactic": { "type": "string", "description": "MITRE tactic identifier, for example Execution." },
+        "techniques": {
+          "type": "array",
+          "description": "May be empty: the service accepted a tactic carrying no techniques on 2026-09-15, having refused it on 2026-08-19.",
+          "items": {
+            "type": "object",
+            "required": ["technique"],
+            "additionalProperties": false,
+            "properties": {
+              "technique": {
+              "type": "string",
+              "description": "The PARENT ATT&CK technique id, for example T1059. A subtechnique never goes here: it belongs in subTechniques. Emitting one here is what the service silently normalised on 2026-08-24.",
+              "pattern": "^T\\d{4}$"
+            },
+            "subTechniques": {
+              "type": "array",
+              "description": "Subtechnique ids of this technique, for example T1059.001. Empty when there are none; the service stores it as empty.",
+              "items": { "type": "string", "pattern": "^T\\d{4}\\.\\d{3}$" }
+            }
+            }
+          }
+        }
+      }
+    },
+    "entityMappingConfiguration": {
+      "type": "object",
+      "description": "Maps detection query columns to the entities attached to the alert. One typed object per entity kind, with one property per role, each holding a query column name. The Sentinel entityMappings 'identifier' selects which column property applies.",
+      "additionalProperties": false,
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "aadUserIdColumn": { "type": "string" },
+              "dnsDomainColumn": { "type": "string" },
+              "nameColumn": { "type": "string" },
+              "ntDomainColumn": { "type": "string" },
+              "sidColumn": { "type": "string" },
+              "upnColumn": { "type": "string" },
+              "upnSuffixColumn": { "type": "string" }
+            }
+          }
+        },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "deviceIdColumn": { "type": "string" },
+              "dnsDomainColumn": { "type": "string" },
+              "nameColumn": { "type": "string" },
+              "netBiosNameColumn": { "type": "string" },
+              "ntDomainColumn": { "type": "string" }
+            }
+          }
+        },
+        "ips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "addressColumn": { "type": "string" },
+              "scopeColumn": { "type": "string" }
+            }
+          }
+        },
+        "urls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "addressColumn": { "type": "string" } }
+          }
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "nameColumn": { "type": "string" },
+              "sha1Column": { "type": "string" },
+              "sha256Column": { "type": "string" }
+            }
+          }
+        },
+        "processes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "sha1Column": { "type": "string" },
+              "sha256Column": { "type": "string" }
+            }
+          }
+        },
+        "mailboxes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "primaryAddressColumn": { "type": "string" } }
+          }
+        },
+        "mailMessages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "networkMessageIdColumn": { "type": "string" },
+              "recipientColumn": { "type": "string" },
+              "senderColumn": { "type": "string" },
+              "subjectColumn": { "type": "string" }
+            }
+          }
+        },
+        "mailClusters": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "registryValues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "keyColumn": { "type": "string" },
+              "valueNameColumn": { "type": "string" }
+            }
+          }
+        },
+        "azureResources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "resourceIdColumn": { "type": "string" } }
+          }
+        },
+        "cloudApplications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "appIdColumn": { "type": "string" },
+              "nameColumn": { "type": "string" }
+            }
+          }
+        },
+        "dns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "domainNameColumn": { "type": "string" },
+              "hostIpAddressColumn": { "type": "string" },
+              "serverIpColumn": { "type": "string" }
+            }
+          }
+        },
+        "securityGroups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "distinguishedNameColumn": { "type": "string" },
+              "objectIdColumn": { "type": "string" },
+              "sidColumn": { "type": "string" }
+            }
+          }
+        },
+        "oAuthApplications": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "amazonResources": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "googleCloudResources": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+      }
+    }
+  }
+}

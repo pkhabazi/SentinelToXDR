@@ -1,0 +1,20 @@
+# USE CASE: no entity mappings. Undocumented API constraint 4: the service
+# requires entityMappings OR impactedAssets ("At least one of impactedAssets or
+# entityMappings must be provided."), and impactedAssets is deprecated and
+# removed on 2026-10-01. An empty entityMappings object counts as absent.
+# 1,892 rules in the public Azure-Sentinel corpus are in this position.
+# EXPECT: NeedsWork - add an entityMappings entry
+id: 5a1e0030-0000-4000-8000-000000000030
+name: Sample - No entity mappings
+description: Maps no entities, so the alert has nothing to attach to.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Persistence
+relevantTechniques:
+  - T1136
+query: |
+  DeviceProcessEvents
+  | where ProcessCommandLine has 'schtasks /create'

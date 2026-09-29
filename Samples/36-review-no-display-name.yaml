@@ -1,0 +1,24 @@
+# USE CASE: a rule with no name at all. The converter used to emit displayName: '' with no
+# finding, and displayName is mandatory (schema minLength 1), so the payload was refused
+# before anything else was looked at. Now it is named 'Unnamed rule <id>' and the finding
+# says so. Found by the 2026-09-16 stress test.
+# EXPECT: Review - 'The rule has no display name; the detection was named after its id'
+id: 5a1e0036-0000-4000-8000-000000000036
+name: ""
+description: The name field is empty.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+query: |
+  DeviceProcessEvents
+  | where FileName =~ 'mshta.exe'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

@@ -1,0 +1,10 @@
+{
+  "_comment": "USE CASE: a rule kind that cannot migrate. Fusion is a Microsoft-managed correlation engine with no KQL query, so there is nothing to convert. Before this module gated rule kinds it produced a valid-looking detection with an empty query. EXPECT: Blocked",
+  "type": "Microsoft.SecurityInsights/alertRules",
+  "kind": "Fusion",
+  "properties": {
+    "displayName": "Sample - Advanced multistage attack detection",
+    "enabled": true,
+    "alertRuleTemplateName": "f71aba3d-28fb-450b-b192-4e76a83015c8"
+  }
+}

@@ -1,0 +1,225 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "title": "Microsoft Sentinel Scheduled Analytics Rule Schema",
+    "type": "object",
+    "description": "Schema for Microsoft Sentinel Scheduled Analytics Rule templates. Covers both the community / content-hub YAML format and the ARM template JSON format (Microsoft.SecurityInsights/alertRules). When loading an ARM template the converter automatically extracts the nested 'properties' object.",
+    "additionalProperties": true,
+    "properties": {
+        "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier (GUID) of the analytics rule. Used as the basis for the XDR detectorId.",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "name": {
+            "type": "string",
+            "description": "Display name of the analytics rule (community YAML field). Maps to XDR displayName and, when no alertTitle override is given, to alertTitle."
+        },
+        "description": {
+            "type": "string",
+            "description": "Description of what the rule detects. Maps to XDR alertDescription."
+        },
+        "severity": {
+            "type": "string",
+            "description": "Severity level of the alert. Direct match with XDR alertSeverity.",
+            "enum": [
+                "Informational",
+                "Low",
+                "Medium",
+                "High"
+            ]
+        },
+        "status": {
+            "type": "string",
+            "description": "Lifecycle status. 'Deprecated' maps to isEnabled=false; all other values map to isEnabled=true.",
+            "enum": [
+                "Available",
+                "Deprecated",
+                "Preview"
+            ]
+        },
+        "requiredDataConnectors": {
+            "type": "array",
+            "description": "Data connectors required by this rule. Sentinel-specific, not carried over to XDR.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "connectorId": {
+                        "type": "string"
+                    },
+                    "dataTypes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "additionalProperties": true
+            }
+        },
+        "queryFrequency": {
+            "type": "string",
+            "description": "How often the rule runs. Accepts ISO 8601 duration (PT1H, P1D) or community shorthand (1h, 1d, 30m). Rounded to the nearest supported XDR frequency: 1H, 3H, 12H, 24H. NRT rules (kind: NRT) map to '0'."
+        },
+        "queryPeriod": {
+            "type": "string",
+            "description": "Lookback period for the query. Mapped to XDR lookbackPeriod (ISO 8601 duration, clamped to parity limits) on the flexible (SentinelOnly) path; constrained (DefenderOnly/Mixed) rules use a default lookback matched to the chosen frequency."
+        },
+        "triggerOperator": {
+            "type": "string",
+            "description": "Operator for the result-count trigger. XDR always triggers on any result row, so this is not carried over (a warning is emitted).",
+            "enum": [
+                "gt",
+                "lt",
+                "eq",
+                "ne",
+                "GreaterThan",
+                "LessThan",
+                "Equal",
+                "NotEqual"
+            ]
+        },
+        "triggerThreshold": {
+            "type": "integer",
+            "description": "Result count threshold. XDR has no equivalent threshold concept (a warning is emitted).",
+            "minimum": 0
+        },
+        "tactics": {
+            "type": "array",
+            "description": "MITRE ATT&CK tactics. XDR supports only one alertCategory so the first mappable tactic is used; a warning is emitted when multiple tactics are present. Tactics not present in the XDR category list (PreAttack, Reconnaissance, ResourceDevelopment, ImpairProcessControl, InhibitResponseFunction) are mapped to SuspiciousActivity.",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "Collection",
+                    "CommandAndControl",
+                    "CredentialAccess",
+                    "DefenseEvasion",
+                    "Discovery",
+                    "Execution",
+                    "Exfiltration",
+                    "Impact",
+                    "ImpairProcessControl",
+                    "InhibitResponseFunction",
+                    "InitialAccess",
+                    "LateralMovement",
+                    "Persistence",
+                    "PreAttack",
+                    "PrivilegeEscalation",
+                    "Reconnaissance",
+                    "ResourceDevelopment"
+                ]
+            },
+            "uniqueItems": true
+        },
+        "relevantTechniques": {
+            "type": "array",
+            "description": "MITRE ATT&CK technique IDs (community YAML format). Maps directly to XDR mitreTechniques.",
+            "items": {
+                "type": "string",
+                "pattern": "^T\\d{4}(\\.\\d{3})?$"
+            },
+            "uniqueItems": true
+        },
+        "query": {
+            "type": "string",
+            "description": "KQL query. Maps to XDR queryText. WARNING: Sentinel-specific tables (SigninLogs, SecurityEvent, AuditLogs, etc.) are not available in Defender XDR. The query must be reviewed and adapted."
+        },
+        "entityMappings": {
+            "type": "array",
+            "description": "Mappings from query columns to Sentinel entity types. Converted to XDR impactedEntities. Unsupported Sentinel entity types (File, MailMessage, AzureResource, CloudApplication, DNS, IoTDevice, SecurityGroup, SubmissionMail, MailCluster, Malware) are skipped with a warning.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "entityType": {
+                        "type": "string",
+                        "description": "Sentinel entity type. 'Host' maps to XDR 'Machine'; 'Account' maps to XDR 'User'. All others are a direct name match where supported.",
+                        "enum": [
+                            "Account",
+                            "AzureResource",
+                            "CloudApplication",
+                            "DNS",
+                            "File",
+                            "FileHash",
+                            "Host",
+                            "IP",
+                            "IoTDevice",
+                            "Mailbox",
+                            "MailCluster",
+                            "MailMessage",
+                            "Malware",
+                            "Process",
+                            "RegistryKey",
+                            "RegistryValue",
+                            "SecurityGroup",
+                            "SubmissionMail",
+                            "URL"
+                        ]
+                    },
+                    "fieldMappings": {
+                        "type": "array",
+                        "description": "Maps entity-specific identifiers to query result columns. The 'columnName' value is used as the XDR entityIdentifier.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "identifier": {
+                                    "type": "string",
+                                    "description": "Sentinel entity field name (e.g. FullName, Address, Url). Informational only; not carried over to XDR."
+                                },
+                                "columnName": {
+                                    "type": "string",
+                                    "description": "KQL result column that holds the identifier value. Used as the XDR entityIdentifier."
+                                }
+                            },
+                            "required": [
+                                "identifier",
+                                "columnName"
+                            ],
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                "required": [
+                    "entityType",
+                    "fieldMappings"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "alertDetailsOverride": {
+            "type": "object",
+            "description": "Dynamic alert property overrides based on query columns. Sentinel-specific; not carried over to XDR."
+        },
+        "customDetails": {
+            "type": "object",
+            "description": "Custom key-value pairs attached to the alert. Sentinel-specific; not carried over to XDR."
+        },
+        "incidentConfiguration": {
+            "type": "object",
+            "description": "Settings for incident grouping. Sentinel-specific; not carried over to XDR."
+        },
+        "eventGroupingSettings": {
+            "type": "object",
+            "description": "Settings for how events are grouped into alerts. Sentinel-specific; not carried over to XDR."
+        },
+        "sentinelEntitiesMappings": {
+            "type": "array",
+            "description": "Additional Sentinel entity mappings. Sentinel-specific; not carried over to XDR."
+        },
+        "version": {
+            "type": "string",
+            "description": "Semantic version of the analytics rule template."
+        },
+        "kind": {
+            "type": "string",
+            "description": "Rule kind. 'NRT' maps to XDR frequency '0' (Near Real Time); 'Scheduled' uses the queryFrequency value.",
+            "enum": [
+                "Scheduled",
+                "NRT"
+            ]
+        }
+    },
+    "required": [
+        "name",
+        "query"
+    ]
+}

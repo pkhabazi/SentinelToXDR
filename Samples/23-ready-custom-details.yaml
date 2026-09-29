@@ -1,0 +1,28 @@
+# USE CASE: custom details DO migrate - the capability is Supported - but the
+# map has to survive the trip. Community YAML parses into a Hashtable and only a
+# PSCustomObject answers to PSObject.Properties, so this rule used to deploy a
+# single garbage key ('CommandLine Initiator = ') instead of two real ones. 863
+# rules in the Azure-Sentinel repository use custom details.
+# EXPECT: Ready - and customDetails carries CommandLine and Initiator intact
+id: 5a1e0023-0000-4000-8000-000000000023
+name: Sample - Custom alert details
+description: Attaches extra columns to the alert as custom details.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+query: |
+  DeviceProcessEvents
+  | where FileName == 'rundll32.exe'
+customDetails:
+  CommandLine: ProcessCommandLine
+  Initiator: InitiatingProcessFileName
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

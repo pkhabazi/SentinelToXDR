@@ -1,0 +1,27 @@
+# USE CASE: an entity type Defender XDR has no home for. The IoTDevice vanishes
+# from the alert entirely, while the URL beside it maps fine - so the rule still
+# works, but investigators lose a pivot.
+# EXPECT: NeedsWork - IoTDevice unsupported, urls still mapped
+id: 5a1e0007-0000-4000-8000-000000000007
+name: Sample - Unsupported entity type
+description: Maps an entity with no Defender XDR equivalent.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - CommandAndControl
+relevantTechniques:
+  - T1071
+query: |
+  DeviceNetworkEvents
+  | where RemoteUrl endswith '.onion'
+entityMappings:
+  - entityType: IoTDevice
+    fieldMappings:
+      - identifier: DeviceId
+        columnName: DeviceId
+  - entityType: URL
+    fieldMappings:
+      - identifier: Url
+        columnName: RemoteUrl

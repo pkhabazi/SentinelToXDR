@@ -1,0 +1,72 @@
+name: Release
+
+# A tag like v1.0.0 builds the module, runs lint and tests, and attaches a zip of the staged
+# module to a GitHub Release. The module is distributed from GitHub only; nothing here
+# publishes to the PowerShell Gallery. (build.ps1 keeps a Publish task for the day that
+# changes, but no workflow calls it.)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and attach to a GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -Scope CurrentUser -Force -SkipPublisherCheck
+          Install-Module -Name powershell-yaml -Scope CurrentUser -Force -SkipPublisherCheck
+          Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: Verify the tag matches the module version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $manifestVersion = (Import-PowerShellDataFile ./src/SentinelToXDR.psd1).ModuleVersion
+          $tagVersion = '${{ github.ref_name }}'.TrimStart('v')
+          if ($manifestVersion -ne $tagVersion) {
+            Write-Host "::error::Tag v$tagVersion does not match ModuleVersion $manifestVersion in the manifest."
+            exit 1
+          }
+          Write-Host "Version OK: $manifestVersion"
+
+      # Lint, test and package all run through build.ps1, so a release does exactly what a
+      # developer can run locally with ./build.ps1.
+      - name: Lint, test and package
+        shell: pwsh
+        run: ./build.ps1 -Task All
+
+      - name: Zip the staged module
+        id: zip
+        shell: pwsh
+        run: |
+          $version = (Import-PowerShellDataFile ./src/SentinelToXDR.psd1).ModuleVersion
+          $zip = "SentinelToXDR-$version.zip"
+          Compress-Archive -Path ./artifacts/SentinelToXDR -DestinationPath $zip -Force
+          "zip=$zip" >> $env:GITHUB_OUTPUT
+
+      - name: Create the GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" "${{ steps.zip.outputs.zip }}" \
+            --title "SentinelToXDR ${{ github.ref_name }}" \
+            --notes "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md). Install instructions are in the README."
+
+      - name: Keep the zip on a manual run
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SentinelToXDR-module
+          path: ${{ steps.zip.outputs.zip }}

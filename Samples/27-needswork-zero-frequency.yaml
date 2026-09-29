@@ -1,0 +1,25 @@
+# USE CASE: a malformed rule. queryFrequency is zero but the rule is scheduled,
+# not NRT. A zero frequency means "continuous" in Defender XDR, so passing it
+# through would silently turn a broken scheduled rule into a continuous
+# detection. It is constrained to the shortest supported frequency instead, and
+# the change is reported rather than assumed.
+# EXPECT: NeedsWork - run frequency constrained
+id: 5a1e0027-0000-4000-8000-000000000027
+name: Sample - Scheduled rule with a zero frequency
+description: A scheduled rule whose frequency is zero.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT0S
+queryPeriod: PT1H
+tactics:
+  - Persistence
+relevantTechniques:
+  - T1136
+query: |
+  DeviceRegistryEvents
+  | where RegistryValueName == 'Run'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

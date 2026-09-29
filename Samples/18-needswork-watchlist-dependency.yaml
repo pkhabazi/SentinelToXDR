@@ -1,0 +1,25 @@
+# USE CASE: the false green. Every structural check passes - Defender tables,
+# clean entities, a supported frequency - and the query still cannot run,
+# because _GetWatchlist() reaches a Log Analytics watchlist that does not exist
+# in advanced hunting. Before the query-dependency scan this graded Review and
+# would have been deployed.
+# EXPECT: NeedsWork - the query depends on something Defender XDR does not have
+id: 5a1e0018-0000-4000-8000-000000000018
+name: Sample - Watchlist lookup on Defender data
+description: Filters Defender process events against a Sentinel watchlist.
+severity: High
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+query: |
+  DeviceProcessEvents
+  | where AccountName in (_GetWatchlist('HighValueAccounts') | project SearchKey)
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

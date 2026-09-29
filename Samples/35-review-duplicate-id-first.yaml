@@ -1,0 +1,24 @@
+# USE CASE: two files in one batch carry the same id (see 35-review-duplicate-id-second).
+# Deploying both would create one detection and fail the other with a 409 that reads as
+# 'already in the tenant' rather than 'your input has a duplicate'. Nothing warned about it
+# until 2026-09-16. The FIRST occurrence is clean and grades Ready; the second is flagged.
+# EXPECT: Ready
+id: 5a1e0035-0000-4000-8000-000000000035
+name: Sample - Duplicate id, first occurrence
+description: The first of two rules sharing one id.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+query: |
+  DeviceProcessEvents
+  | where FileName =~ 'wscript.exe'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

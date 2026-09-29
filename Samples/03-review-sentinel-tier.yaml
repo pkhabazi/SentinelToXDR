@@ -1,0 +1,29 @@
+# USE CASE: the most common real-world case. The rule works exactly as before,
+# but only if Microsoft Sentinel data is available in the Defender portal. That
+# is one tenant-level prerequisite, checked once, that moves a whole solution.
+# EXPECT: Review
+id: 5a1e0003-0000-4000-8000-000000000003
+name: Sample - Failed logons from a single IP
+description: Runs entirely on Sentinel-tier data.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - CredentialAccess
+relevantTechniques:
+  - T1110
+query: |
+  SecurityEvent
+  | where EventID == 4625
+  | summarize FailedCount = count() by IpAddress, Computer
+  | where FailedCount > 10
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: Computer
+  - entityType: IP
+    fieldMappings:
+      - identifier: Address
+        columnName: IpAddress

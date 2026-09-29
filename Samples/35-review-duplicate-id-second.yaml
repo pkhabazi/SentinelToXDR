@@ -1,0 +1,22 @@
+# USE CASE: the second rule carrying id 5a1e0035-... (see 35-review-duplicate-id-first).
+# EXPECT: Review - 'Another rule in this batch has the same id'. Only when the folder is
+# assessed as a batch; on its own this file is a perfectly good rule.
+id: 5a1e0035-0000-4000-8000-000000000035
+name: Sample - Duplicate id, second occurrence
+description: The second of two rules sharing one id.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+query: |
+  DeviceProcessEvents
+  | where FileName =~ 'cscript.exe'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

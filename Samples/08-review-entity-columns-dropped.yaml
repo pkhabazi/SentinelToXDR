@@ -1,0 +1,38 @@
+# USE CASE: partial entity loss, which is NOT the same as losing an entity.
+# The Graph process entity carries hash columns only, so a Sentinel process
+# mapped on its id and command line has no column to land in. The data is still
+# in the query output and can be carried as custom details instead.
+# The Host below is not decoration: the API refuses a rule that maps no asset
+# entity or IP at all, so without it this sample would demonstrate that instead
+# of the partial loss it was written for.
+# A RegistryValue entity used to sit here too. It was removed on 2026-09-15, when
+# the service stated that a registry value needs keyColumn AND valueNameColumn -
+# and Sentinel puts the key on a separate RegistryKey entity, so this mapping was
+# refused rather than partially carried. That is a different lesson; see
+# docs/API-Constraints.md.
+# EXPECT: Review - some entity columns could not be mapped
+id: 5a1e0008-0000-4000-8000-000000000008
+name: Sample - Entity columns with no target
+description: Uses entity identifiers the Graph model has no column for.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+query: |
+  DeviceProcessEvents
+  | where FileName endswith '.scr'
+entityMappings:
+  - entityType: Process
+    fieldMappings:
+      - identifier: ProcessId
+        columnName: ProcessId
+      - identifier: CommandLine
+        columnName: ProcessCommandLine
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

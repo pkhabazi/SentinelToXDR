@@ -1,0 +1,40 @@
+# USE CASE: alert enrichment. Custom details and a dynamic alert title carry
+# across; a dynamic SEVERITY and dynamic TACTICS do not - defining all alert
+# properties from query results is still Planned.
+# EXPECT: NeedsWork - dynamic severity/tactics not migrated, custom details kept
+id: 5a1e0010-0000-4000-8000-000000000010
+name: Sample - Alert enrichment
+description: Uses custom details and dynamic alert properties.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - InitialAccess
+relevantTechniques:
+  - T1078
+query: |
+  EmailEvents
+  | where ThreatTypes has 'Phish'
+customDetails:
+  Subject: Subject
+  SenderDomain: SenderFromDomain
+  ThreatType: ThreatTypes
+alertDetailsOverride:
+  alertDisplayNameFormat: 'Phishing mail from {{SenderFromDomain}}'
+  alertDescriptionFormat: 'Message {{NetworkMessageId}} flagged as {{ThreatTypes}}'
+  alertSeverityColumnName: ComputedSeverity
+  alertTacticsColumnName: ComputedTactics
+entityMappings:
+  - entityType: MailMessage
+    fieldMappings:
+      - identifier: NetworkMessageId
+        columnName: NetworkMessageId
+      - identifier: Recipient
+        columnName: RecipientEmailAddress
+      - identifier: Subject
+        columnName: Subject
+  - entityType: Mailbox
+    fieldMappings:
+      - identifier: MailboxPrimaryAddress
+        columnName: RecipientEmailAddress

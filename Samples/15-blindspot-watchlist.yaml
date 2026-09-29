@@ -1,0 +1,37 @@
+# USE CASE: the module's KNOWN BLIND SPOT, kept here on purpose.
+#
+# This rule calls _GetWatchlist(). Watchlists do not exist in Defender XDR at
+# all, so the rule cannot run there no matter what data is onboarded.
+#
+# Static analysis gets the right VERDICT for the wrong REASON: the table
+# extractor treats the watchlist call as an unrecognised table, classifies the
+# query Mixed, and reports "needs Microsoft Sentinel data in the Defender
+# portal". That prerequisite is not the problem, and onboarding the data will
+# not fix this rule.
+#
+# Nothing offline can tell the difference. Test-XDRDetectionQuery can, and
+# returns WatchlistDependency against a real tenant - which is exactly why that
+# validation layer exists.
+#
+# EXPECT: Review from static analysis (right verdict, misleading reason)
+#         WatchlistDependency from Test-XDRDetectionQuery (the real answer)
+id: 5a1e0015-0000-4000-8000-000000000015
+name: Sample - Watchlist dependency (known false green)
+description: Looks clean to static analysis and cannot run in Defender XDR.
+severity: High
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Discovery
+relevantTechniques:
+  - T1087
+query: |
+  let HighValueAssets = _GetWatchlist('HighValueAssets') | project SearchKey;
+  DeviceProcessEvents
+  | where DeviceName in (HighValueAssets)
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

@@ -1,0 +1,26 @@
+# USE CASE: an apostrophe inside a KQL comment. It used to open a phantom
+# string literal that blanked the rest of the query, hiding every table and
+# dependency after it and silently changing the data tier. The query below is
+# Sentinel-tier, and it must still be seen as Sentinel-tier.
+# EXPECT: Review - Sentinel data, and the tier is read correctly despite the comment
+id: 5a1e0025-0000-4000-8000-000000000025
+name: Sample - Comment with an apostrophe
+description: A comment containing an apostrophe must not blank the query.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - CredentialAccess
+relevantTechniques:
+  - T1003
+query: |
+  // shorter URI's may cause noise, change the threshold as needed
+  SecurityEvent
+  | where EventID == 4625
+  | summarize Failures = count() by Account, Computer
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: Computer

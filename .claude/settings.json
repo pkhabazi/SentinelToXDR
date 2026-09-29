@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pwsh tests/Invoke-Tests.ps1)",
+      "Bash(pwsh -NoProfile -File tests/Invoke-Tests.ps1)",
+      "Bash(pwsh -NoProfile -c Invoke-Pester:*)",
+      "Bash(pwsh -NoProfile -c Invoke-ScriptAnalyzer:*)",
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s\\n' 'SentinelToXDR — remember: (1) tests are law — run tests/Invoke-Tests.ps1 before claiming done; (2) conversion behaviour from MS parity tables lives in src/Data/*.psd1, not in code; (3) every gap gets a warning, never a silent default.'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/Invoke-PSScriptAnalyzerHook.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}

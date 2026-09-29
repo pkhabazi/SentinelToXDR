@@ -1,0 +1,44 @@
+# USE CASE: several rules in one file. A converter that assumes one rule per
+# file silently drops all but the first.
+# EXPECT: two rules, both Ready
+---
+id: 5a1e0016-0000-4000-8000-000000000016
+name: Sample - First of two in one file
+description: First rule in a multi-document YAML file.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Discovery
+relevantTechniques:
+  - T1087
+query: |
+  DeviceInfo
+  | where OSPlatform == 'Windows11'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName
+
+---
+id: 5a1e0017-0000-4000-8000-000000000017
+name: Sample - Second of two in one file
+description: Second rule in the same file.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Discovery
+relevantTechniques:
+  - T1087
+query: |
+  DeviceInfo
+  | where IsAzureADJoined == false
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

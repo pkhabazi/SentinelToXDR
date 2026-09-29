@@ -1,0 +1,27 @@
+# USE CASE: multiple MITRE tactics. The legacy flat shape had to collapse these
+# to one alertCategory and drop the rest; the Graph model carries a collection,
+# so all three survive. 992 rules in the community content look like this.
+# EXPECT: Ready, with three tactics in the output
+id: 5a1e0002-0000-4000-8000-000000000002
+name: Sample - Multi-tactic credential theft
+description: Carries three tactics and several techniques.
+severity: High
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - CredentialAccess
+  - Persistence
+  - DefenseEvasion
+relevantTechniques:
+  - T1003
+  - T1003.001
+  - T1547
+query: |
+  DeviceProcessEvents
+  | where ProcessCommandLine has_any ('lsass', 'sekurlsa')
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

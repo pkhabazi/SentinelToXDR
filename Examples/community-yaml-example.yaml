@@ -1,0 +1,32 @@
+id: 11111111-aaaa-bbbb-cccc-222222222222
+name: Multiple Failed Logins from Single IP
+description: |
+  Detects brute-force login attempts originating from a single source IP address.
+  Requires Unified SOC or replacement with a native XDR table.
+severity: Medium
+status: Available
+queryFrequency: PT1H
+queryPeriod: PT1H
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - CredentialAccess
+relevantTechniques:
+  - T1110
+  - T1110.001
+query: |
+  SecurityEvent
+  | where EventID == 4625
+  | summarize FailedCount = count() by IpAddress, Computer
+  | where FailedCount > 10
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: FullName
+        columnName: Computer
+  - entityType: IP
+    fieldMappings:
+      - identifier: Address
+        columnName: IpAddress
+kind: Scheduled
+version: 1.0.0

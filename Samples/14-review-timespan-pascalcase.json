@@ -1,0 +1,24 @@
+[
+  {
+    "_comment": "USE CASE: a real solution that ships PascalCase members at the root and serialized TimeSpan OBJECTS instead of ISO 8601 durations. A naive reader gets an empty rule and a frequency of System.Object. EXPECT: Review, frequency normalized to PT6H",
+    "DisplayName": "Sample - PascalCase with serialized TimeSpan",
+    "Description": "The shape the SAP solution ships.",
+    "Severity": "Medium",
+    "Enabled": true,
+    "Query": "SecurityEvent | where EventID == 4688",
+    "QueryFrequency": { "Ticks": 216000000000, "TotalHours": 6 },
+    "QueryPeriod": { "Ticks": 216000000000, "TotalHours": 6 },
+    "TriggerOperator": "GreaterThan",
+    "TriggerThreshold": 0,
+    "Tactics": ["Execution"],
+    "RelevantTechniques": ["T1059"],
+    "EntityMappings": [
+      {
+        "entityType": "Host",
+        "fieldMappings": [
+          { "identifier": "HostName", "columnName": "Computer" }
+        ]
+      }
+    ]
+  }
+]

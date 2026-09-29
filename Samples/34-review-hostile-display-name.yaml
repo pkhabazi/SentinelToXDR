@@ -1,0 +1,26 @@
+# USE CASE: a display name carrying characters that do not print or that reorder text on
+# screen - a Unicode right-to-left override (U+202E), a tab, a newline - plus a leading '='
+# and an HTML tag. Community content is untrusted input; every one of these survived into
+# the portal name, the output filename and all three report formats until 2026-09-16.
+# EXPECT: Review - the control and override characters are removed and the removal is a
+# finding. The '=' and the tag are legitimate characters in a name and are kept; the
+# report writers neutralise them per format (CSV formula guard, Markdown escaping).
+id: 5a1e0034-0000-4000-8000-000000000034
+name: "=Sample ‮<b>reversed</b> name\twith\ttabs\nand a newline"
+description: A name that would misrender or execute somewhere.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+query: |
+  DeviceProcessEvents
+  | where FileName =~ 'cmd.exe'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

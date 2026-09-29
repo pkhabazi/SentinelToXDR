@@ -1,0 +1,27 @@
+# USE CASE: an Account mapped on a name alone. Undocumented API constraint 5,
+# and the one with the widest blast radius: entity mappings are validated per
+# type against sufficient identifier combinations, and an account needs a strong
+# identifier while a host is satisfied by a name. The converter maps Sentinel
+# identifiers to Graph columns one at a time and had no notion of a combination
+# being sufficient. 1,986 of the 2,227 account mappings emitted over the public
+# Azure-Sentinel corpus (89%) carry no strong identifier and would be refused.
+# EXPECT: NeedsWork - map a Sid, Upn or AadUserId alongside the name
+id: 5a1e0031-0000-4000-8000-000000000031
+name: Sample - Account mapped on a name alone
+description: Maps an Account by name only, which the API refuses.
+severity: High
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - CredentialAccess
+relevantTechniques:
+  - T1003
+query: |
+  IdentityLogonEvents
+  | where ActionType == 'LogonFailed'
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: AccountName

@@ -1,0 +1,24 @@
+# USE CASE: the lookback nobody notices. This rule looks back 14 days in
+# Sentinel. As a Defender-tier detection running hourly it gets a FIXED four
+# hour window - the field cannot be configured. The detection quietly evaluates
+# far less data than it used to. Run it less often to look back further.
+# EXPECT: Review - fixed window is shorter than the rule asked for
+id: 5a1e0009-0000-4000-8000-000000000009
+name: Sample - Long lookback on Defender data
+description: Asks for a 14 day window on a tier where the window is fixed.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: P14D
+tactics:
+  - Persistence
+relevantTechniques:
+  - T1136
+query: |
+  DeviceRegistryEvents
+  | where RegistryKey has 'CurrentVersion\\Run'
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

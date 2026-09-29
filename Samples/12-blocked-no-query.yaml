@@ -1,0 +1,13 @@
+# USE CASE: a scheduled rule with no query. A custom detection is defined by its
+# query, so there is nothing to convert. Usually a content stub or a rule whose
+# query was removed.
+# EXPECT: Blocked
+id: 5a1e0012-0000-4000-8000-000000000012
+name: Sample - Scheduled rule with no query
+description: Declares a schedule but carries nothing to run.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Impact

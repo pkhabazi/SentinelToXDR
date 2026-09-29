@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_comment": "USE CASE: an ARM template whose triggerThreshold is a parameter with no default value, so it arrives as the literal string [parameters('threshold')]. On 2026-09-16 the converter read four such rules and assessed two: the normalizer warned that 'everything else converts normally' and the engine then threw on an [int] cast, and the rule vanished with no verdict. EXPECT: NeedsWork - the trigger threshold is dropped (it has no XDR equivalent) and the rule is still assessed. Also nested under a Microsoft.Resources/deployments resource, which the template walker did not descend until the same day."
+  },
+  "parameters": {
+    "workspace": { "type": "string", "defaultValue": "law-soc" },
+    "threshold": { "type": "int" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "nested-rules",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+              "apiVersion": "2023-02-01",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/5a1e0032-0000-4000-8000-000000000032')]",
+              "kind": "Scheduled",
+              "properties": {
+                "displayName": "Sample - Threshold from an ARM parameter",
+                "description": "The threshold is a deployment-time parameter with no default.",
+                "severity": "Medium",
+                "enabled": true,
+                "query": "DeviceLogonEvents\n| where ActionType == 'LogonFailed'\n| summarize Failures = count() by DeviceName, AccountName\n| where Failures > 5",
+                "queryFrequency": "PT1H",
+                "queryPeriod": "PT1H",
+                "triggerOperator": "GreaterThan",
+                "triggerThreshold": "[parameters('threshold')]",
+                "tactics": ["CredentialAccess"],
+                "techniques": ["T1110"],
+                "entityMappings": [
+                  {
+                    "entityType": "Host",
+                    "fieldMappings": [
+                      { "identifier": "HostName", "columnName": "DeviceName" }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

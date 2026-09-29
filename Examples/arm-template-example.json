@@ -1,0 +1,32 @@
+{
+  "type": "Microsoft.SecurityInsights/alertRules",
+  "kind": "Scheduled",
+  "name": "33333333-dddd-eeee-ffff-444444444444",
+  "properties": {
+    "displayName": "Suspicious Process Creation via WMI",
+    "description": "Detects process creation events initiated through WMI, a common lateral movement technique.",
+    "severity": "High",
+    "enabled": true,
+    "query": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ 'WmiPrvSE.exe'\n| where FileName !in ('WmiPrvSE.exe', 'scrcons.exe')\n| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName",
+    "queryFrequency": "PT1H",
+    "queryPeriod": "PT1H",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "tactics": ["LateralMovement", "Execution"],
+    "techniques": ["T1047"],
+    "entityMappings": [
+      {
+        "entityType": "Host",
+        "fieldMappings": [
+          { "identifier": "FullName", "columnName": "DeviceName" }
+        ]
+      },
+      {
+        "entityType": "Process",
+        "fieldMappings": [
+          { "identifier": "CommandLine", "columnName": "ProcessCommandLine" }
+        ]
+      }
+    ]
+  }
+}

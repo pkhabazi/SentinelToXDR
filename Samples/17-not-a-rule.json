@@ -1,0 +1,7 @@
+{
+  "_comment": "USE CASE: not a rule at all. A Content Hub solution folder is mostly workbooks, connectors, DCR templates and table schemas. Reading these as rules produced 1,254 phantom entries in one scan of the community Solutions tree. EXPECT: skipped silently during a folder scan, no verdict, no warning",
+  "version": "Notebook/1.0",
+  "items": [ { "type": 1, "content": { "json": "## Sample workbook" } } ],
+  "styleSettings": {},
+  "fromTemplateId": "sentinel-SampleWorkbook"
+}

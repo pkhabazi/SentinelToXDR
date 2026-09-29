@@ -1,0 +1,24 @@
+# USE CASE: customDetails that is not a map. Sentinel expects { DetailName: ColumnName };
+# this rule carries a bare string. Until 2026-09-16 the converter enumerated the STRING's
+# own properties and emitted {"Length":"18"} as a custom detail, on a rule graded Ready.
+# EXPECT: Review - the malformed block is dropped and named; nothing is invented.
+id: 5a1e0033-0000-4000-8000-000000000033
+name: Sample - Malformed custom details
+description: customDetails is a scalar instead of a name-to-column map.
+severity: Low
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+query: |
+  DeviceProcessEvents
+  | where FileName =~ 'powershell.exe'
+customDetails: ProcessCommandLine
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName

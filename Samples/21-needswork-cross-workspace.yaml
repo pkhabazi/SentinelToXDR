@@ -1,0 +1,23 @@
+# USE CASE: the workspace() operator reaches a second Log Analytics workspace.
+# A custom detection only ever sees the advanced hunting data of its own
+# tenant, so this query cannot run as written.
+# EXPECT: NeedsWork - the query depends on something Defender XDR does not have
+id: 5a1e0021-0000-4000-8000-000000000021
+name: Sample - Cross-workspace correlation
+description: Correlates local device events against another workspace.
+severity: Medium
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - LateralMovement
+relevantTechniques:
+  - T1021
+query: |
+  DeviceLogonEvents
+  | join kind=inner (workspace('other-soc').SecurityEvent | where EventID == 4624) on $left.DeviceName == $right.Computer
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: Computer

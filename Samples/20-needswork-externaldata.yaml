@@ -1,0 +1,24 @@
+# USE CASE: externaldata pulls an IOC list from a URI at query time. Advanced
+# hunting custom detections do not support it, so the list has to be
+# materialised into the query before this can deploy.
+# EXPECT: NeedsWork - the query depends on something Defender XDR does not have
+id: 5a1e0020-0000-4000-8000-000000000020
+name: Sample - External IOC list
+description: Joins Defender network events against an externally hosted IP list.
+severity: High
+kind: Scheduled
+queryFrequency: PT1H
+queryPeriod: PT1H
+tactics:
+  - CommandAndControl
+relevantTechniques:
+  - T1071
+query: |
+  let iocs = externaldata(IPAddress: string) [@"https://example.com/iocs.csv"] with (format="csv");
+  DeviceNetworkEvents
+  | where RemoteIP in (iocs)
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceName
